@@ -1,0 +1,38 @@
+{% extends "admin/change_form.html" %}
+{% load i18n admin_urls %}
+
+{% block object-tools-items %}
+<div style="margin-bottom: 20px; display: flex; align-items: center; gap: 10px;">
+    {% if previous_id %}
+    <a href="{% url 'admin:projects_rawdata_change' previous_id %}" class="button" style="display: inline-flex; align-items: center;">
+        <span style="font-size: 20px;">←</span> Previous
+    </a>
+    {% endif %}
+    
+    {% if next_id %}
+    <a href="{% url 'admin:projects_rawdata_change' next_id %}" class="button" style="display: inline-flex; align-items: center;">
+        Next <span style="font-size: 20px;">→</span>
+    </a>
+    {% endif %}
+</div>
+{{ block.super }}
+{% endblock %}
+
+{% block extrahead %}
+{{ block.super }}
+<style>
+    .button {
+        background: #79aec8;
+        padding: 10px 15px;
+        border: none;
+        border-radius: 4px;
+        color: #fff;
+        cursor: pointer;
+        text-decoration: none;
+        font-weight: bold;
+    }
+    .button:hover {
+        background: #609ab6;
+    }
+</style>
+{% endblock %}
