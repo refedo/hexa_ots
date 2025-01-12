@@ -1,0 +1,141 @@
+{% extends 'base.html' %}
+
+{% block title %}Projects - HEXA OTS{% endblock %}
+
+{% block page_title %}Project Management{% endblock %}
+
+{% block content %}
+<div class="card">
+    <div class="card-header">
+        <div class="d-flex justify-content-between align-items-center">
+            <div class="card-title">Projects</div>
+            <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addProjectModal">
+                <i class="fas fa-plus"></i> New Project
+            </button>
+        </div>
+    </div>
+    <div class="card-body">
+        <div class="table-responsive">
+            <table class="table table-hover">
+                <thead>
+                    <tr>
+                        <th>Project Number</th>
+                        <th>Name</th>
+                        <th>Client</th>
+                        <th>Project Manager</th>
+                        <th>Buildings</th>
+                        <th>Tonnage</th>
+                        <th>Status</th>
+                        <th>Contract Date</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for project in projects %}
+                    <tr>
+                        <td>{{ project.number }}</td>
+                        <td>{{ project.name|default:"-" }}</td>
+                        <td>{{ project.client }}</td>
+                        <td>{{ project.manager|default:"-" }}</td>
+                        <td>{{ project.buildings }}</td>
+                        <td>{{ project.tonnage }} MT</td>
+                        <td>
+                            <span class="badge bg-{{ project.status_color }}">
+                                {{ project.status }}
+                            </span>
+                        </td>
+                        <td>{{ project.contract_date|date:"Y-m-d"|default:"-" }}</td>
+                        <td>
+                            <div class="btn-group">
+                                <button class="btn btn-sm btn-info" onclick="viewProject('{{ project.number }}')">
+                                    <i class="fas fa-eye"></i>
+                                </button>
+                                <button class="btn btn-sm btn-warning" onclick="editProject('{{ project.number }}')">
+                                    <i class="fas fa-edit"></i>
+                                </button>
+                                <button class="btn btn-sm btn-danger" onclick="deleteProject('{{ project.number }}')">
+                                    <i class="fas fa-trash"></i>
+                                </button>
+                            </div>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="9" class="text-center">No projects found</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- Add Project Modal -->
+<div class="modal fade" id="addProjectModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Add New Project</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="addProjectForm" method="post">
+                    {% csrf_token %}
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Project Number*</label>
+                            <input type="text" class="form-control" name="project_number" required>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Project Name</label>
+                            <input type="text" class="form-control" name="project_name">
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Client Name*</label>
+                            <input type="text" class="form-control" name="client_name" required>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Project Manager</label>
+                            <input type="text" class="form-control" name="project_manager">
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Contract Date</label>
+                            <input type="date" class="form-control" name="contract_date">
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Contractual Tonnage*</label>
+                            <input type="number" step="0.01" class="form-control" name="contractual_tonnage" required>
+                        </div>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                <button type="submit" form="addProjectForm" class="btn btn-primary">Create Project</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    function viewProject(projectNumber) {
+        window.location.href = `/projects/${projectNumber}/`;
+    }
+
+    function editProject(projectNumber) {
+        window.location.href = `/projects/${projectNumber}/edit/`;
+    }
+
+    function deleteProject(projectNumber) {
+        if (confirm('Are you sure you want to delete this project? This action cannot be undone.')) {
+            // Implement delete functionality
+        }
+    }
+</script>
+{% endblock %}

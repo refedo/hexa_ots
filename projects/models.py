@@ -134,7 +134,7 @@ class RawData(models.Model):
     net_area_single = models.CharField(max_length=255, null=True, blank=True)
     net_area_all = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)
     single_part_weight = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)
-    net_weight_total = models.CharField(max_length=255, null=True, blank=True)
+    net_weight_total = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)
     revision = models.CharField(max_length=255, null=True, blank=True)
 
     class Meta:
@@ -146,3 +146,28 @@ class RawData(models.Model):
 
     def __str__(self):
         return f"{self.log_designation} - {self.project.project_number} - {self.building.building_name}"
+
+
+class Task(models.Model):
+    STATUS_CHOICES = [
+        ('pending', 'Pending'),
+        ('in_progress', 'In Progress'),
+        ('completed', 'Completed'),
+        ('cancelled', 'Cancelled'),
+    ]
+
+    project = models.ForeignKey(Project, on_delete=models.CASCADE, related_name='tasks')
+    title = models.CharField(max_length=200)
+    description = models.TextField(null=True, blank=True)
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='pending')
+    assigned_to = models.CharField(max_length=100, null=True, blank=True)
+    due_date = models.DateField(null=True, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        db_table = 'hexa_tasks'
+        ordering = ['-created_at']
+
+    def __str__(self):
+        return self.title

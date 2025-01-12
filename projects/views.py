@@ -1,4 +1,4 @@
-from django.shortcuts import render
+from django.shortcuts import render, redirect, get_object_or_404
 from rest_framework import viewsets, filters, status
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.decorators import action
@@ -130,3 +130,27 @@ class RawDataViewSet(viewsets.ModelViewSet):
                 return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+def add_building(request, project_number):
+    project = get_object_or_404(Project, project_number=project_number)
+    
+    if request.method == 'POST':
+        # Handle form submission for adding a new building
+        building_name = request.POST.get('building_name')
+        designer_name = request.POST.get('designer_name')
+        subcontractor_name = request.POST.get('subcontractor_name')
+        
+        # Create a new Building instance
+        new_building = Building(
+            project=project,
+            building_name=building_name,
+            designer_name=designer_name,
+            subcontractor_name=subcontractor_name
+        )
+        new_building.save()
+        return redirect('project_detail', project_number=project_number)
+    
+    context = {
+        'project': project
+    }
+    return render(request, 'add_building.html', context)

@@ -16,11 +16,23 @@ Including another URLconf
 """
 from django.contrib import admin
 from django.urls import path, include
-from rest_framework.authtoken import views as auth_views
+from django.conf import settings
+from django.conf.urls.static import static
+from . import views
 
 urlpatterns = [
     path('admin/', admin.site.urls),
-    path('api/', include('projects.urls')),
-    path('api-auth/', include('rest_framework.urls')),
-    path('api-token-auth/', auth_views.obtain_auth_token),
-]
+    path('', views.dashboard, name='dashboard'),
+    path('raw-data/', views.raw_data, name='raw_data'),
+    path('raw-data/edit/<int:id>/', views.raw_data_edit, name='raw_data_edit'),
+    path('projects/', views.projects_view, name='projects'),
+    path('projects/<str:project_number>/', views.project_detail, name='project_detail'),
+    path('projects/<str:project_number>/edit/', views.project_edit, name='project_edit'),
+    path('production/', views.production, name='production'),
+    path('qc/', views.qc, name='qc'),
+    path('logistics/', views.logistics, name='logistics'),
+    path('material/', views.material, name='material'),
+    
+    # API endpoints for CRUD operations
+    path('api/projects/', include('projects.urls')),
+] + static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)

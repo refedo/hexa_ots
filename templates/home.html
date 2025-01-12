@@ -1,0 +1,20 @@
+{% extends 'base.html' %}
+
+{% block title %}Home - HEXA OTS{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-12">
+        <h1>Welcome to HEXA OTS</h1>
+        <div class="card">
+            <div class="card-body">
+                <h5 class="card-title">Project Management System</h5>
+                <p class="card-text">
+                    Manage your projects and tasks efficiently with HEXA OTS.
+                </p>
+                <a href="{% url 'admin:index' %}" class="btn btn-primary">Go to Admin</a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,28 @@
+{% extends 'base.html' %}
+
+{% block title %}Add Building - HEXA OTS{% endblock %}
+
+{% block page_title %}Add Building{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <h2>Add Building for Project: {{ project.project_name }}</h2>
+    <form method="post">
+        {% csrf_token %}
+        <div class="mb-3">
+            <label for="building_name" class="form-label">Building Name</label>
+            <input type="text" class="form-control" id="building_name" name="building_name" required>
+        </div>
+        <div class="mb-3">
+            <label for="designer_name" class="form-label">Designer Name</label>
+            <input type="text" class="form-control" id="designer_name" name="designer_name">
+        </div>
+        <div class="mb-3">
+            <label for="subcontractor_name" class="form-label">Subcontractor Name</label>
+            <input type="text" class="form-control" id="subcontractor_name" name="subcontractor_name">
+        </div>
+        <button type="submit" class="btn btn-primary">Add Building</button>
+        <a href="{% url 'project_detail' project.project_number %}" class="btn btn-secondary">Cancel</a>
+    </form>
+</div>
+{% endblock %}

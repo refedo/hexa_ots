@@ -1,0 +1,80 @@
+{% extends 'base.html' %}
+
+{% block title %}Edit {{ project.project_name|default:project.project_number }} - HEXA OTS{% endblock %}
+
+{% block page_title %}Edit Project: {{ project.project_name|default:project.project_number }}{% endblock %}
+
+{% block content %}
+<div class="card">
+    <div class="card-header">
+        <div class="d-flex justify-content-between align-items-center">
+            <div class="card-title">Edit Project Information</div>
+            <a href="{% url 'project_detail' project.project_number %}" class="btn btn-secondary">
+                <i class="fas fa-arrow-left"></i> Back to Project
+            </a>
+        </div>
+    </div>
+    <div class="card-body">
+        <form method="post">
+            {% csrf_token %}
+            <div class="row">
+                <div class="col-md-6 mb-3">
+                    <label class="form-label">Project Number</label>
+                    <input type="text" class="form-control" value="{{ project.project_number }}" readonly>
+                    <small class="text-muted">Project number cannot be changed</small>
+                </div>
+                <div class="col-md-6 mb-3">
+                    <label class="form-label">Project Name</label>
+                    <input type="text" class="form-control" name="project_name" value="{{ project.project_name }}">
+                </div>
+            </div>
+            
+            <div class="row">
+                <div class="col-md-6 mb-3">
+                    <label class="form-label">Client Name*</label>
+                    <input type="text" class="form-control" name="client_name" value="{{ project.client_name }}" required>
+                </div>
+                <div class="col-md-6 mb-3">
+                    <label class="form-label">Project Manager</label>
+                    <input type="text" class="form-control" name="project_manager" value="{{ project.project_manager }}">
+                </div>
+            </div>
+            
+            <div class="row">
+                <div class="col-md-6 mb-3">
+                    <label class="form-label">Contract Date</label>
+                    <input type="date" class="form-control" name="contract_date" 
+                           value="{{ project.contract_date|date:'Y-m-d' }}">
+                </div>
+                <div class="col-md-6 mb-3">
+                    <label class="form-label">Contractual Tonnage*</label>
+                    <input type="number" step="0.01" class="form-control" name="contractual_tonnage" 
+                           value="{{ project.contractual_tonnage }}" required>
+                </div>
+            </div>
+            
+            <div class="row">
+                <div class="col-md-6 mb-3">
+                    <label class="form-label">Status</label>
+                    <select class="form-select" name="status">
+                        <option value="not_started" {% if project.status == 'not_started' %}selected{% endif %}>
+                            Not Started
+                        </option>
+                        <option value="in_progress" {% if project.status == 'in_progress' %}selected{% endif %}>
+                            In Progress
+                        </option>
+                        <option value="completed" {% if project.status == 'completed' %}selected{% endif %}>
+                            Completed
+                        </option>
+                    </select>
+                </div>
+            </div>
+            
+            <div class="d-flex justify-content-end mt-4">
+                <a href="{% url 'project_detail' project.project_number %}" class="btn btn-secondary me-2">Cancel</a>
+                <button type="submit" class="btn btn-primary">Save Changes</button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}

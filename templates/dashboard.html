@@ -1,0 +1,76 @@
+{% extends 'base.html' %}
+
+{% block title %}Dashboard - HEXA OTS{% endblock %}
+
+{% block page_title %}Dashboard Overview{% endblock %}
+
+{% block content %}
+<div class="dashboard-grid">
+    <!-- Statistics Cards -->
+    <div class="card stat-card">
+        <div class="stat-value">{{ total_projects }}</div>
+        <div class="stat-label">Total Projects</div>
+    </div>
+    <div class="card stat-card">
+        <div class="stat-value">{{ active_projects }}</div>
+        <div class="stat-label">Active Projects</div>
+    </div>
+    <div class="card stat-card">
+        <div class="stat-value">{{ completed_projects }}</div>
+        <div class="stat-label">Completed Projects</div>
+    </div>
+</div>
+
+<div class="card mt-4">
+    <div class="card-header">
+        <h2 class="card-title">Recent Projects</h2>
+        <a href="{% url 'projects' %}" class="btn btn-primary btn-sm">View All</a>
+    </div>
+    <div class="table-responsive">
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>Project Name</th>
+                    <th>Status</th>
+                    <th>Contract Date</th>
+                    <th>Client</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for project in recent_projects %}
+                <tr>
+                    <td>
+                        <div class="d-flex align-items-center">
+                            <div>
+                                <div class="fw-semibold">{{ project.name }}</div>
+                                <div class="text-muted small">ID: {{ project.project_number }}</div>
+                            </div>
+                        </div>
+                    </td>
+                    <td>
+                        <span class="badge bg-{{ project.status_color }}">
+                            {{ project.status }}
+                        </span>
+                    </td>
+                    <td>{{ project.due_date }}</td>
+                    <td>{{ project.client_name }}</td>
+                    <td>
+                        {% if project.project_number %}
+                        <a href="{% url 'project_detail' project.project_number %}" class="btn btn-sm btn-outline-primary">
+                            View Details
+                        </a>
+                        {% else %}
+                        <span class="text-muted">No Project Number</span>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+{% endblock %}
