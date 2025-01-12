@@ -1,0 +1,414 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block extra_css %}
+<link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
+<style>
+    .production-form {
+        max-width: 1000px;
+        margin: 20px auto;
+        padding: 30px;
+        background: #fff;
+        border-radius: 12px;
+        box-shadow: 0 2px 15px rgba(0,0,0,0.08);
+    }
+    
+    .form-header {
+        margin-bottom: 30px;
+        padding-bottom: 20px;
+        border-bottom: 2px solid #f0f0f0;
+    }
+    
+    .form-header h2 {
+        color: #2c3e50;
+        font-size: 24px;
+        margin: 0;
+    }
+    
+    .form-section {
+        background: #f8f9fa;
+        padding: 20px;
+        border-radius: 8px;
+        margin-bottom: 25px;
+    }
+    
+    .form-section-title {
+        font-size: 18px;
+        color: #2c3e50;
+        margin-bottom: 20px;
+        padding-bottom: 10px;
+        border-bottom: 1px solid #e9ecef;
+    }
+    
+    .form-group {
+        margin-bottom: 20px;
+    }
+    
+    .form-group label {
+        font-weight: 600;
+        color: #495057;
+        margin-bottom: 8px;
+        display: block;
+    }
+    
+    .form-control {
+        border: 1px solid #ced4da;
+        border-radius: 6px;
+        padding: 10px 15px;
+        transition: all 0.3s;
+    }
+    
+    .form-control:focus {
+        border-color: #80bdff;
+        box-shadow: 0 0 0 0.2rem rgba(0,123,255,.25);
+    }
+    
+    .select2-container .select2-selection--multiple {
+        min-height: 45px;
+        border: 1px solid #ced4da;
+    }
+    
+    .total-quantity {
+        background: #e9ecef;
+        padding: 10px 15px;
+        border-radius: 6px;
+        margin-top: 10px;
+        font-weight: 600;
+        color: #2c3e50;
+        display: flex;
+        align-items: center;
+    }
+    
+    .total-quantity i {
+        margin-right: 8px;
+        color: #6c757d;
+    }
+    
+    .btn-primary {
+        padding: 12px 25px;
+        font-weight: 600;
+        border-radius: 6px;
+        transition: all 0.3s;
+    }
+    
+    .btn-secondary {
+        background: #6c757d;
+        border: none;
+        padding: 10px 15px;
+    }
+    
+    .loading {
+        opacity: 0.7;
+        pointer-events: none;
+    }
+    
+    .alert {
+        border-radius: 6px;
+        margin-bottom: 20px;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="production-form">
+        <div class="form-header">
+            <h2><i class="fas fa-clipboard-list me-2"></i>Production Logging</h2>
+        </div>
+        
+        <div id="alertContainer"></div>
+        
+        <form id="productionLogForm" method="POST">
+            {% csrf_token %}
+            
+            <div class="form-section">
+                <div class="form-section-title">Process Details</div>
+                <div class="form-group">
+                    <label for="process">Process Type</label>
+                    <select class="form-control" id="process" name="process" required>
+                        <option value="">Select Process</option>
+                        <option value="fit-up">Fit-up</option>
+                        <option value="welding">Welding</option>
+                        <option value="visualization">Visualization</option>
+                    </select>
+                </div>
+
+                <div class="form-group mb-3">
+                    <label for="log_designation">Part Numbers</label>
+                    <select class="form-control select2" id="log_designation" name="log_designation" multiple disabled>
+                        <option value="">First select a process type</option>
+                    </select>
+                </div>
+
+                <div class="form-section-title mt-4">Selected Items</div>
+                <div class="table-responsive">
+                    <div class="mb-3">
+                        <button type="button" class="btn btn-secondary" id="maxAllButton">
+                            <i class="fas fa-arrow-up"></i> Max All Quantities
+                        </button>
+                    </div>
+                    <table class="table table-bordered table-hover" id="selectedItemsTable">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Log Designation</th>
+                                <th>Part Designation</th>
+                                <th>Name</th>
+                                <th>Available Quantity</th>
+                                <th>Quantity to Produce</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label for="facility">Facility</label>
+                <select class="form-control" id="facility" name="facility" required>
+                    <option value="">Select Facility</option>
+                    <option value="facility1">Facility 1</option>
+                    <option value="facility2">Facility 2</option>
+                    <option value="facility3">Facility 3</option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label for="team">Team</label>
+                <select class="form-control" id="team" name="team" required>
+                    <option value="">Select Team</option>
+                    <option value="team1">Team 1</option>
+                    <option value="team2">Team 2</option>
+                    <option value="team3">Team 3</option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label for="production_date">Production Date</label>
+                <div class="input-group">
+                    <input type="date" class="form-control" id="production_date" name="production_date" required>
+                    <div class="input-group-append">
+                        <button type="button" class="btn btn-secondary" id="todayButton">Today</button>
+                    </div>
+                </div>
+            </div>
+
+            <button type="submit" class="btn btn-primary w-100">
+                <i class="fas fa-save me-2"></i>Submit Production Log
+            </button>
+        </form>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+<script>
+    $(document).ready(function() {
+        // Initialize select2
+        $('#log_designation').select2({
+            ajax: {
+                url: '/api/production/get-log-designations/',
+                dataType: 'json',
+                delay: 250,
+                data: function(params) {
+                    return {
+                        q: params.term || '',
+                        process: $('#process').val()
+                    };
+                },
+                processResults: function(data) {
+                    if (data.error) {
+                        showAlert('danger', data.error);
+                        return { results: [] };
+                    }
+                    return data;
+                },
+                cache: false
+            },
+            minimumInputLength: 0,
+            multiple: true,
+            placeholder: 'Search for parts...',
+            allowClear: true
+        }).on('select2:select', function(e) {
+            const logDesignation = e.params.data.id;
+            const availableQuantity = e.params.data.available_quantity;
+            addItemToTable(logDesignation, availableQuantity);
+            // Clear the selection after adding to table
+            $(this).val(null).trigger('change');
+        });
+
+        // Function to add item to table
+        function addItemToTable(logDesignation, availableQuantity) {
+            // Check if item already exists in table
+            if ($('#selectedItemsTable tbody').find(`tr[data-log-designation="${logDesignation}"]`).length > 0) {
+                return;
+            }
+
+            $.ajax({
+                url: '/api/production/get-log-designation-details/',
+                data: { 
+                    log_designation: logDesignation,
+                    process: $('#process').val()
+                },
+                success: function(details) {
+                    const row = `
+                        <tr data-log-designation="${logDesignation}">
+                            <td>${logDesignation}</td>
+                            <td>${details.part_designation || ''}</td>
+                            <td>${details.name || ''}</td>
+                            <td>${availableQuantity}</td>
+                            <td>
+                                <div class="input-group">
+                                    <input type="number" class="form-control quantity-input" 
+                                           min="1" max="${availableQuantity}" required>
+                                    <button type="button" class="btn btn-outline-secondary max-quantity" 
+                                           data-max="${availableQuantity}">Max</button>
+                                </div>
+                            </td>
+                            <td>
+                                <button type="button" class="btn btn-danger btn-sm remove-item">
+                                    <i class="fas fa-trash"></i>
+                                </button>
+                            </td>
+                        </tr>
+                    `;
+                    $('#selectedItemsTable tbody').append(row);
+                }
+            });
+        }
+
+        // Process change handler
+        $('#process').on('change', function() {
+            const process = $(this).val();
+            if (process) {
+                $('#log_designation').prop('disabled', false).val(null).trigger('change');
+                $('#selectedItemsTable tbody').empty();
+            } else {
+                $('#log_designation').prop('disabled', true).val(null).trigger('change');
+                $('#selectedItemsTable tbody').empty();
+            }
+        });
+
+        // Max all button handler
+        $('#maxAllButton').click(function() {
+            $('#selectedItemsTable tbody tr').each(function() {
+                const maxQuantity = $(this).find('.max-quantity').data('max');
+                $(this).find('.quantity-input').val(maxQuantity);
+            });
+        });
+
+        // Handle remove item
+        $(document).on('click', '.remove-item', function() {
+            $(this).closest('tr').remove();
+        });
+
+        // Handle Max button click
+        $(document).on('click', '.max-quantity', function() {
+            const maxValue = $(this).data('max');
+            $(this).closest('td').find('.quantity-input').val(maxValue);
+        });
+
+        // Set today's date by default
+        const today = new Date().toISOString().split('T')[0];
+        $('#production_date').val(today);
+        
+        // Today button handler
+        $('#todayButton').click(function() {
+            $('#production_date').val(today);
+        });
+
+        // Handle form submission
+        $('#productionLogForm').on('submit', function(e) {
+            e.preventDefault();
+            
+            // Validate form fields
+            const production_date = $('#production_date').val();
+            const process = $('#process').val();
+            const facility = $('#facility').val();
+            const team = $('#team').val();
+            
+            if (!production_date || !process || !facility || !team) {
+                showAlert('danger', 'Please fill in all required fields');
+                return;
+            }
+            
+            // Collect quantities from the table
+            const quantities = {};
+            $('#selectedItemsTable tbody tr').each(function() {
+                const logDesignation = $(this).find('td:first').text();
+                const quantity = $(this).find('.quantity-input').val();
+                if (quantity && parseInt(quantity) > 0) {
+                    quantities[logDesignation] = parseInt(quantity);
+                }
+            });
+
+            if (Object.keys(quantities).length === 0) {
+                showAlert('danger', 'Please add at least one item with quantity');
+                return;
+            }
+
+            // Disable submit button and show loading state
+            const submitBtn = $(this).find('button[type="submit"]');
+            submitBtn.prop('disabled', true);
+            submitBtn.html('<i class="fas fa-spinner fa-spin"></i> Submitting...');
+
+            // Get form data
+            const formData = new FormData();
+            formData.append('production_date', production_date);
+            formData.append('process', process);
+            formData.append('facility', facility);
+            formData.append('team', team);
+            formData.append('quantities', JSON.stringify(quantities));
+            formData.append('csrfmiddlewaretoken', $('input[name=csrfmiddlewaretoken]').val());
+
+            // Submit form
+            $.ajax({
+                url: '/api/production/submit-log/',
+                type: 'POST',
+                data: formData,
+                processData: false,
+                contentType: false,
+                success: function(response) {
+                    showAlert('success', response.message);
+                    // Clear form and table
+                    $('#selectedItemsTable tbody').empty();
+                    $('#log_designation').val(null).trigger('change');
+                    $('#productionLogForm')[0].reset();
+                    // Redirect to production list after successful submission
+                    setTimeout(function() {
+                        window.location.href = '/production/list/';
+                    }, 1500);
+                },
+                error: function(xhr) {
+                    let errorMessage = 'An error occurred while submitting the form';
+                    if (xhr.responseJSON && xhr.responseJSON.error) {
+                        errorMessage = xhr.responseJSON.error;
+                    }
+                    showAlert('danger', errorMessage);
+                    // Re-enable submit button
+                    submitBtn.prop('disabled', false);
+                    submitBtn.html('Submit Production Log');
+                }
+            });
+        });
+
+        // Alert helper function
+        function showAlert(type, message) {
+            const alertHtml = `
+                <div class="alert alert-${type} alert-dismissible fade show" role="alert">
+                    ${message}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                </div>
+            `;
+            $('#alertContainer').html(alertHtml);
+            
+            // Auto-dismiss after 5 seconds
+            setTimeout(() => {
+                $('.alert').alert('close');
+            }, 5000);
+        }
+    });
+</script>
+{% endblock %}

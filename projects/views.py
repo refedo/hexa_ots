@@ -11,6 +11,10 @@ from .serializers import (
     ProjectSerializer, BuildingSerializer, RawDataSerializer,
     RawDataUploadSerializer, LogDesignationSerializer
 )
+from django.http import JsonResponse
+from django.views.decorators.http import require_http_methods
+from django.db.models import Sum
+from django.utils import timezone
 
 # Create your views here.
 
@@ -154,3 +158,61 @@ def add_building(request, project_number):
         'project': project
     }
     return render(request, 'add_building.html', context)
+
+def production_logging(request):
+    """View for the production logging page"""
+    return render(request, 'production_logging.html')
+
+@require_http_methods(["GET"])
+def get_assembly_parts(request):
+    """API endpoint to get assembly parts for select2"""
+    search = request.GET.get('search', '')
+    page = int(request.GET.get('page', 1))
+    page_size = 10
+    
+    # Filter assembly parts from raw data
+    parts = RawData.objects.filter(
+        part_designation='Assembly Parts',
+        log_designation__icontains=search
+    ).values('log_designation').distinct()
+    
+    # Implement pagination
+    start = (page - 1) * page_size
+    end = start + page_size
+    
+    results = [{'id': part['log_designation'], 'text': part['log_designation']} 
+              for part in parts[start:end]]
+    
+    return JsonResponse({
+        'results': results,
+        'pagination': {'more': len(parts) > end}
+    })
+
+@require_http_methods(["GET"])
+def get_total_quantity(request):
+    """Get total quantity for selected parts"""
+    parts = request.GET.get('parts', '').split(',')
+    total = RawData.objects.filter(
+        log_designation__in=parts
+    ).aggregate(total=Sum('quantity'))['total'] or 0
+    
+    return JsonResponse({'total_quantity': total})
+
+@require_http_methods(["POST"])
+def log_production(request):
+    """Handle production log submission"""
+    try:
+        # Get form data
+        log_designations = request.POST.getlist('log_designation')
+        quantity = int(request.POST.get('quantity'))
+        process = request.POST.get('process')
+        production_date = request.POST.get('production_date')
+        facility = request.POST.get('facility')
+        team = request.POST.get('team')
+        
+        # TODO: Create ProductionLog model and save the data
+        # For now, we'll just return success
+        
+        return JsonResponse({'success': True})
+    except Exception as e:
+        return JsonResponse({'success': False, 'error': str(e)})

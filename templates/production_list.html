@@ -1,0 +1,221 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block extra_css %}
+<style>
+    .production-list {
+        background: #fff;
+        border-radius: 12px;
+        box-shadow: 0 2px 15px rgba(0,0,0,0.08);
+        padding: 30px;
+        margin: 20px 0;
+    }
+    
+    .production-list-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 25px;
+        padding-bottom: 15px;
+        border-bottom: 2px solid #f0f0f0;
+    }
+    
+    .production-list-header h2 {
+        margin: 0;
+        color: #2c3e50;
+        font-size: 24px;
+    }
+    
+    .production-filters {
+        background: #f8f9fa;
+        padding: 20px;
+        border-radius: 8px;
+        margin-bottom: 25px;
+    }
+    
+    .production-table {
+        width: 100%;
+        border-collapse: separate;
+        border-spacing: 0;
+    }
+    
+    .production-table th {
+        background: #f8f9fa;
+        padding: 12px 15px;
+        font-weight: 600;
+        color: #495057;
+        text-align: left;
+        border-bottom: 2px solid #dee2e6;
+    }
+    
+    .production-table td {
+        padding: 12px 15px;
+        border-bottom: 1px solid #dee2e6;
+        color: #495057;
+    }
+    
+    .production-table tr:hover {
+        background-color: #f8f9fa;
+    }
+    
+    .status-badge {
+        padding: 6px 12px;
+        border-radius: 50px;
+        font-size: 14px;
+        font-weight: 500;
+    }
+    
+    .status-completed {
+        background: #d4edda;
+        color: #155724;
+    }
+    
+    .status-in-progress {
+        background: #cce5ff;
+        color: #004085;
+    }
+    
+    .pagination {
+        margin-top: 25px;
+        display: flex;
+        justify-content: center;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="production-list">
+        <div class="production-list-header">
+            <h2><i class="fas fa-clipboard-check me-2"></i>Production Logs</h2>
+            <a href="{% url 'production_logging' %}" class="btn btn-primary">
+                <i class="fas fa-plus me-2"></i>New Production Log
+            </a>
+        </div>
+
+        <div class="production-filters">
+            <div class="row">
+                <div class="col-md-3">
+                    <div class="form-group">
+                        <label for="dateRange">Date Range</label>
+                        <input type="text" class="form-control" id="dateRange">
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="form-group">
+                        <label for="process">Process</label>
+                        <select class="form-control" id="process">
+                            <option value="">All Processes</option>
+                            <option value="fit-up">Fit-up</option>
+                            <option value="welding">Welding</option>
+                            <option value="visualization">Visualization</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="form-group">
+                        <label for="facility">Facility</label>
+                        <select class="form-control" id="facility">
+                            <option value="">All Facilities</option>
+                            <option value="facility1">Facility 1</option>
+                            <option value="facility2">Facility 2</option>
+                            <option value="facility3">Facility 3</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="form-group">
+                        <label>&nbsp;</label>
+                        <button class="btn btn-primary w-100" id="applyFilters">
+                            <i class="fas fa-filter me-2"></i>Apply Filters
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="table-responsive">
+            <table class="production-table">
+                <thead>
+                    <tr>
+                        <th>Log Designation</th>
+                        <th>Process</th>
+                        <th>Quantity</th>
+                        <th>Production Date</th>
+                        <th>Facility</th>
+                        <th>Team</th>
+                        <th>Created At</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for log in production_logs %}
+                    <tr>
+                        <td>{{ log.log_designation }}</td>
+                        <td>{{ log.get_process_display }}</td>
+                        <td>{{ log.quantity }}</td>
+                        <td>{{ log.production_date }}</td>
+                        <td>{{ log.facility }}</td>
+                        <td>{{ log.team }}</td>
+                        <td>{{ log.created_at|date:"Y-m-d H:i" }}</td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="7" class="text-center py-4">No production logs found</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+        {% if production_logs %}
+        <nav class="pagination">
+            <ul class="pagination">
+                <li class="page-item disabled">
+                    <a class="page-link" href="#" tabindex="-1">Previous</a>
+                </li>
+                <li class="page-item active">
+                    <a class="page-link" href="#">1</a>
+                </li>
+                <li class="page-item">
+                    <a class="page-link" href="#">2</a>
+                </li>
+                <li class="page-item">
+                    <a class="page-link" href="#">3</a>
+                </li>
+                <li class="page-item">
+                    <a class="page-link" href="#">Next</a>
+                </li>
+            </ul>
+        </nav>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    $(document).ready(function() {
+        // Initialize filters
+        $('#dateRange').daterangepicker({
+            opens: 'left',
+            autoUpdateInput: false,
+            locale: {
+                cancelLabel: 'Clear'
+            }
+        });
+
+        $('#dateRange').on('apply.daterangepicker', function(ev, picker) {
+            $(this).val(picker.startDate.format('MM/DD/YYYY') + ' - ' + picker.endDate.format('MM/DD/YYYY'));
+        });
+
+        $('#dateRange').on('cancel.daterangepicker', function(ev, picker) {
+            $(this).val('');
+        });
+
+        // Apply filters
+        $('#applyFilters').click(function() {
+            // Add your filter logic here
+        });
+    });
+</script>
+{% endblock %}

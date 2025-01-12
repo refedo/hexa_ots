@@ -82,6 +82,31 @@ body {
     background: var(--secondary-color);
 }
 
+/* Submenu styles */
+.menu-section {
+    position: relative;
+}
+
+.submenu {
+    display: none;
+    padding-left: 20px;
+    background: rgba(0, 0, 0, 0.1);
+    border-left: 3px solid #007bff;
+}
+
+.submenu.show {
+    display: block;
+}
+
+.submenu .menu-item {
+    padding: 8px 15px;
+    font-size: 0.9em;
+}
+
+.submenu .menu-item i {
+    font-size: 0.9em;
+}
+
 /* Main Content Styles */
 .main-content {
     margin-left: 250px;

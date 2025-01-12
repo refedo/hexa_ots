@@ -33,6 +33,18 @@ urlpatterns = [
     path('logistics/', views.logistics, name='logistics'),
     path('material/', views.material, name='material'),
     
+    # Production Management
+    path('production/', views.production_management, name='production'),
+    path('production/log/', views.production_logging, name='production_logging'),
+    path('production/list/', views.production_list, name='production_list'),
+    path('api/production/submit-log/', views.submit_production_log, name='submit_production_log'),
+    path('api/production/get-log-designations/', views.get_log_designations, name='get_log_designations'),
+    path('api/production/get-total-quantity/', views.get_total_quantity, name='get_total_quantity'),
+    path('api/production/get-log-designation-details/', views.get_log_designation_details, name='get_log_designation_details'),
+    
+    # Production logging
+    # path('production-logging/', views.production_logging, name='production_logging'),
+    
     # API endpoints for CRUD operations
     path('api/projects/', include('projects.urls')),
 ] + static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)

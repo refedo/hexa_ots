@@ -1,8 +1,11 @@
 from django.shortcuts import render, redirect, get_object_or_404
-from projects.models import Project, Building, RawData
+from projects.models import Project, Building, RawData, ProductionLog
 from django.db.models import Count, Sum
 from django.db.models.functions import Coalesce
 from django.db import models
+from django.http import JsonResponse
+from projects.models import RawData  
+import json
 
 def home(request):
     return render(request, 'home.html')
@@ -170,3 +173,162 @@ def raw_data_edit(request, id):
         'buildings': Building.objects.filter(project=entry.project)
     }
     return render(request, 'raw_data_edit.html', context)
+
+def production_logging(request):
+    """
+    View function for the production logging page.
+    """
+    context = {}
+    return render(request, 'production_logging.html', context)
+
+def production_management(request):
+    """
+    Main production management view that serves as a dashboard/landing page for production-related activities.
+    """
+    return render(request, 'production_management.html', {
+        'section': 'production'
+    })
+
+def production_logging_view(request):
+    """
+    View function for logging new production entries.
+    """
+    return render(request, 'production_logging.html', {
+        'section': 'production'
+    })
+
+def production_list(request):
+    """
+    View function for displaying the list of production entries.
+    """
+    production_logs = ProductionLog.objects.all().order_by('-production_date', '-created_at')
+    return render(request, 'production_list.html', {
+        'section': 'production',
+        'production_logs': production_logs
+    })
+
+def get_log_designations(request):
+    """
+    API endpoint to get log_designation items from RawData table.
+    """
+    search_term = request.GET.get('q', '')
+    process = request.GET.get('process', '')
+    
+    if not process:
+        return JsonResponse({'error': 'Process type is required'}, status=400)
+
+    # Get all raw data items
+    raw_data = RawData.objects.filter(
+        log_designation__icontains=search_term
+    ).distinct()
+
+    # Get the quantities already used for each log_designation in the specified process
+    used_quantities = ProductionLog.objects.filter(
+        process=process
+    ).values('log_designation').annotate(
+        used_quantity=Sum('quantity')
+    )
+
+    # Convert to dictionary for easier lookup
+    used_qty_dict = {item['log_designation']: item['used_quantity'] for item in used_quantities}
+
+    # Filter and format results
+    results = []
+    for item in raw_data:
+        total_qty = item.quantity or 0
+        used_qty = used_qty_dict.get(item.log_designation, 0)
+        available_qty = total_qty - used_qty
+
+        if available_qty > 0:
+            results.append({
+                'id': item.log_designation,
+                'text': f"{item.log_designation} - {item.name or 'N/A'} ({available_qty} available)",
+                'available_quantity': available_qty
+            })
+
+    return JsonResponse({
+        'results': results
+    })
+
+def get_total_quantity(request):
+    """
+    API endpoint to get total available quantity for selected log designations.
+    """
+    parts = request.GET.get('parts', '').split(',')
+    if not parts or parts[0] == '':
+        return JsonResponse({'total_quantity': 0})
+    
+    # Sum the quantities for the selected log designations
+    total = RawData.objects.filter(
+        log_designation__in=parts
+    ).aggregate(
+        total_quantity=Coalesce(Sum('quantity'), 0)
+    )['total_quantity']
+    
+    return JsonResponse({'total_quantity': total})
+
+def get_log_designation_details(request):
+    """
+    API endpoint to get details for a specific log designation.
+    """
+    log_designation = request.GET.get('log_designation', '')
+    
+    if not log_designation:
+        return JsonResponse({'error': 'Log designation is required'}, status=400)
+    
+    # Get the total quantity and other details for this log designation
+    item = RawData.objects.filter(log_designation=log_designation).first()
+    
+    if not item:
+        return JsonResponse({'error': 'Log designation not found'}, status=404)
+    
+    details = {
+        'quantity': item.quantity or 0,
+        'part_designation': item.part_designation or '',
+        'assembly_mark': item.assembly_mark or '',
+        'name': item.name or ''
+    }
+    
+    return JsonResponse(details)
+
+def submit_production_log(request):
+    """
+    API endpoint to submit a new production log entry.
+    """
+    if request.method != 'POST':
+        return JsonResponse({'error': 'Only POST method is allowed'}, status=405)
+    
+    try:
+        # Get form data
+        production_date = request.POST.get('production_date')
+        process = request.POST.get('process')
+        facility = request.POST.get('facility')
+        team = request.POST.get('team')
+        quantities = json.loads(request.POST.get('quantities', '{}'))
+        
+        # Validate required fields
+        if not all([production_date, process, facility, team, quantities]):
+            return JsonResponse({'error': 'All fields are required'}, status=400)
+        
+        # Create production log entries for each item
+        logs = []
+        for log_designation, quantity in quantities.items():
+            log = ProductionLog.objects.create(
+                log_designation=log_designation,
+                quantity=quantity,
+                process=process,
+                production_date=production_date,
+                facility=facility,
+                team=team
+            )
+            logs.append(log)
+        
+        return JsonResponse({
+            'success': True,
+            'message': f'Successfully created {len(logs)} production log entries'
+        })
+        
+    except json.JSONDecodeError:
+        return JsonResponse({'error': 'Invalid quantities data'}, status=400)
+    except Exception as e:
+        return JsonResponse({'error': str(e)}, status=500)

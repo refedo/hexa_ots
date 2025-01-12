@@ -1,0 +1,102 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block extra_css %}
+<style>
+    .production-dashboard {
+        padding: 20px 0;
+    }
+    
+    .production-menu {
+        background: #fff;
+        border-radius: 12px;
+        box-shadow: 0 2px 15px rgba(0,0,0,0.08);
+        padding: 30px;
+        margin-bottom: 30px;
+    }
+    
+    .menu-title {
+        color: #2c3e50;
+        font-size: 24px;
+        margin-bottom: 25px;
+        padding-bottom: 15px;
+        border-bottom: 2px solid #f0f0f0;
+    }
+    
+    .menu-items {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+        gap: 20px;
+    }
+    
+    .menu-item {
+        background: #f8f9fa;
+        border-radius: 8px;
+        padding: 20px;
+        text-decoration: none;
+        color: #495057;
+        transition: all 0.3s ease;
+        border: 1px solid #dee2e6;
+    }
+    
+    .menu-item:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        color: #2c3e50;
+        border-color: #80bdff;
+    }
+    
+    .menu-item i {
+        font-size: 24px;
+        margin-bottom: 15px;
+        color: #007bff;
+    }
+    
+    .menu-item h3 {
+        font-size: 18px;
+        margin: 0 0 10px 0;
+    }
+    
+    .menu-item p {
+        margin: 0;
+        color: #6c757d;
+        font-size: 14px;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container production-dashboard">
+    <div class="production-menu">
+        <h2 class="menu-title">
+            <i class="fas fa-industry me-2"></i>Production Management
+        </h2>
+        
+        <div class="menu-items">
+            <a href="{% url 'production_logging' %}" class="menu-item text-center">
+                <i class="fas fa-clipboard-list d-block"></i>
+                <h3>Production Logging</h3>
+                <p>Log new production activities and track progress</p>
+            </a>
+            
+            <a href="{% url 'production_list' %}" class="menu-item text-center">
+                <i class="fas fa-clipboard-check d-block"></i>
+                <h3>Production List</h3>
+                <p>View and manage production records</p>
+            </a>
+            
+            <a href="#" class="menu-item text-center">
+                <i class="fas fa-chart-line d-block"></i>
+                <h3>Production Analytics</h3>
+                <p>View production statistics and reports</p>
+            </a>
+            
+            <a href="#" class="menu-item text-center">
+                <i class="fas fa-cogs d-block"></i>
+                <h3>Settings</h3>
+                <p>Configure production parameters</p>
+            </a>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -6,7 +6,7 @@ from django.contrib import messages
 from django.urls import reverse
 import pandas as pd
 import io
-from .models import Project, Building, RawData
+from .models import Project, Building, RawData, ProductionLog
 
 # Register your models here.
 
@@ -233,3 +233,10 @@ class RawDataAdmin(admin.ModelAdmin):
                 self.message_user(request, f'Error uploading file: {str(e)}', messages.ERROR)
 
         return HttpResponseRedirect('../')
+
+@admin.register(ProductionLog)
+class ProductionLogAdmin(admin.ModelAdmin):
+    list_display = ('log_designation', 'quantity', 'process', 'production_date', 'facility', 'team', 'created_at')
+    list_filter = ('process', 'facility', 'team')
+    search_fields = ('log_designation', 'facility', 'team')
+    ordering = ('-created_at',)
