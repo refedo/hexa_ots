@@ -1,5 +1,5 @@
 {% extends "admin/change_form.html" %}
-{% load i18n admin_urls %}
+{% load i18n admin_urls static admin_list %}
 
 {% block object-tools-items %}
 <div style="margin-bottom: 20px; display: flex; align-items: center; gap: 10px;">
@@ -35,4 +35,121 @@
         background: #609ab6;
     }
 </style>
+<script>
+(function($) {
+    'use strict';
+    $(document).ready(function() {
+        // Store initial building value
+        var initialBuildingId = $('#id_building').val();
+        $('#id_building').data('selected', initialBuildingId);
+        
+        function getCookie(name) {
+            let cookieValue = null;
+            if (document.cookie && document.cookie !== '') {
+                const cookies = document.cookie.split(';');
+                for (let i = 0; i < cookies.length; i++) {
+                    const cookie = cookies[i].trim();
+                    if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                        cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                        break;
+                    }
+                }
+            }
+            return cookieValue;
+        }
+
+        // Function to update building options
+        function updateBuildingOptions() {
+            var projectSelect = $('#id_project');
+            var buildingSelect = $('#id_building');
+            var currentBuildingId = buildingSelect.data('selected');
+            
+            console.log('Project select:', projectSelect.length ? 'found' : 'not found');
+            console.log('Building select:', buildingSelect.length ? 'found' : 'not found');
+            console.log('Current building ID:', currentBuildingId);
+            
+            if (!projectSelect.length || !buildingSelect.length) {
+                console.error('Select elements not found');
+                return;
+            }
+            
+            var projectId = projectSelect.val();
+            console.log('Selected project ID:', projectId);
+            
+            if (!projectId) {
+                buildingSelect.html('<option value="">---------</option>');
+                buildingSelect.prop('disabled', true);
+                return;
+            }
+            
+            // Show loading state
+            buildingSelect.html('<option value="">Loading...</option>');
+            buildingSelect.prop('disabled', true);
+            
+            // Make AJAX request
+            $.ajax({
+                url: '/projects/get-buildings/',
+                data: { project: projectId },
+                method: 'GET',
+                headers: {
+                    'X-CSRFToken': getCookie('csrftoken')
+                },
+                success: function(data) {
+                    console.log('Received data:', data);
+                    buildingSelect.empty();
+                    buildingSelect.append('<option value="">---------</option>');
+                    
+                    if (Array.isArray(data) && data.length > 0) {
+                        data.forEach(function(building) {
+                            var option = $('<option></option>')
+                                .val(building.id)
+                                .text(building.building_name);
+                            
+                            if (building.id == currentBuildingId) {
+                                option.prop('selected', true);
+                            }
+                            
+                            buildingSelect.append(option);
+                        });
+                        buildingSelect.prop('disabled', false);
+                    } else {
+                        buildingSelect.html('<option value="">No buildings available</option>');
+                    }
+                },
+                error: function(xhr, status, error) {
+                    console.error('Error:', error);
+                    console.log('Status:', status);
+                    console.log('Response:', xhr.responseText);
+                    try {
+                        const response = JSON.parse(xhr.responseText);
+                        buildingSelect.html(`<option value="">Error: ${response.error || 'Failed to load buildings'}</option>`);
+                    } catch (e) {
+                        buildingSelect.html('<option value="">Error loading buildings</option>');
+                    }
+                }
+            });
+        }
+        
+        // Bind change event to project select
+        $('#id_project').on('change', function() {
+            console.log('Project changed to:', $(this).val());
+            if ($(this).val() !== $('#id_project').data('last-value')) {
+                $('#id_building').data('selected', ''); // Clear selected building if project changes
+                updateBuildingOptions();
+            }
+            $('#id_project').data('last-value', $(this).val());
+        });
+        
+        // Initial load if project is selected
+        if ($('#id_project').val()) {
+            console.log('Initial project value:', $('#id_project').val());
+            updateBuildingOptions();
+        }
+    });
+})(django.jQuery);
+</script>
+{% endblock %}
+
+{% block content %}
+{{ block.super }}
 {% endblock %}

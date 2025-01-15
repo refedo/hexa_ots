@@ -1,23 +1,20 @@
 from django.shortcuts import render, redirect, get_object_or_404
-from projects.models import Project, Building, RawData, ProductionLog
+from projects.models import Project, Building, RawData
+from prod.models import ProductionLog
 from django.db.models import Count, Sum
 from django.db.models.functions import Coalesce
 from django.db import models
 from django.http import JsonResponse
-from projects.models import RawData  
 import json
 
 def home(request):
-    return render(request, 'home.html')
-
-def dashboard(request):
     # Get project statistics
     total_projects = Project.objects.count()
     active_projects = Project.objects.filter(status='in_progress').count()
     completed_projects = Project.objects.filter(status='completed').count()
 
     # Get recent projects with related data
-    recent_projects = Project.objects.select_related().all().order_by('-contract_date')[:5]
+    recent_projects = Project.objects.all().order_by('-contract_date')[:5]
     recent_projects_data = []
     
     for project in recent_projects:
@@ -28,18 +25,45 @@ def dashboard(request):
         }
         recent_projects_data.append({
             'name': project.project_name or project.project_number,
-            'status': project.get_status_display(),
-            'status_color': status_colors.get(project.status, 'secondary'),
-            'contract_date': project.contract_date.strftime('%Y-%m-%d') if project.contract_date else 'N/A',
-            'client_name': project.client_name,
-            'tonnage': project.contractual_tonnage
+            'status': project.status,
+            'color': status_colors.get(project.status, 'secondary')
         })
 
     context = {
         'total_projects': total_projects,
         'active_projects': active_projects,
         'completed_projects': completed_projects,
-        'recent_projects': recent_projects_data,
+        'recent_projects': recent_projects_data
+    }
+    return render(request, 'dashboard.html', context)
+
+def dashboard(request):
+    # Get project statistics
+    total_projects = Project.objects.count()
+    active_projects = Project.objects.filter(status='in_progress').count()
+    completed_projects = Project.objects.filter(status='completed').count()
+
+    # Get recent projects with related data
+    recent_projects = Project.objects.all().order_by('-contract_date')[:5]
+    recent_projects_data = []
+    
+    for project in recent_projects:
+        status_colors = {
+            'not_started': 'warning',
+            'in_progress': 'primary',
+            'completed': 'success'
+        }
+        recent_projects_data.append({
+            'name': project.project_name or project.project_number,
+            'status': project.status,
+            'color': status_colors.get(project.status, 'secondary')
+        })
+
+    context = {
+        'total_projects': total_projects,
+        'active_projects': active_projects,
+        'completed_projects': completed_projects,
+        'recent_projects': recent_projects_data
     }
     return render(request, 'dashboard.html', context)
 

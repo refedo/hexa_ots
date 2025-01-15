@@ -1,0 +1,318 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block extra_css %}
+<link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
+<style>
+    .production-form {
+        max-width: 1000px;
+        margin: 20px auto;
+        padding: 30px;
+        background: #fff;
+        border-radius: 12px;
+        box-shadow: 0 2px 15px rgba(0,0,0,0.08);
+    }
+    
+    .form-header {
+        margin-bottom: 30px;
+        padding-bottom: 20px;
+        border-bottom: 2px solid #f0f0f0;
+    }
+    
+    .form-header h2 {
+        color: #2c3e50;
+        font-size: 24px;
+        margin: 0;
+    }
+    
+    .form-section {
+        background: #f8f9fa;
+        padding: 20px;
+        border-radius: 8px;
+        margin-bottom: 25px;
+    }
+    
+    .form-section-title {
+        font-size: 18px;
+        color: #2c3e50;
+        margin-bottom: 20px;
+        padding-bottom: 10px;
+        border-bottom: 1px solid #e9ecef;
+    }
+    
+    .form-group {
+        margin-bottom: 20px;
+    }
+    
+    .form-group label {
+        font-weight: 600;
+        color: #495057;
+        margin-bottom: 8px;
+        display: block;
+    }
+
+    .select2-container {
+        width: 100% !important;
+    }
+
+    .select2-selection--multiple {
+        min-height: 38px !important;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="production-form">
+        <div class="form-header">
+            <h2><i class="fas fa-clipboard-list me-2"></i>Production Logging</h2>
+        </div>
+
+        <form id="productionLogForm" method="post">
+            {% csrf_token %}
+            
+            <!-- Process Details Section -->
+            <div class="form-section">
+                <h3 class="form-section-title">Process Details</h3>
+                
+                <div class="form-group">
+                    <label for="process">Process Type</label>
+                    <select class="form-select" id="process" name="process" required>
+                        <option value="">Select Process...</option>
+                        <option value="fit-up">Fit-up</option>
+                        <option value="welding">Welding</option>
+                        <option value="painting">Painting</option>
+                    </select>
+                </div>
+            </div>
+
+            <!-- Part Selection Section -->
+            <div class="form-section">
+                <h3 class="form-section-title">Part Numbers</h3>
+                
+                <div class="form-group">
+                    <select id="log_designation" class="form-control" multiple disabled>
+                        <option></option>
+                    </select>
+                </div>
+
+                <div class="table-responsive mt-4">
+                    <table id="selectedItemsTable" class="table">
+                        <thead>
+                            <tr>
+                                <th>Log Designation</th>
+                                <th>Part Mark</th>
+                                <th>Description</th>
+                                <th>Available Qty</th>
+                                <th>Quantity <button type="button" id="maxAllButton" class="btn btn-sm btn-outline-primary">Max All</button></th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Submit Button -->
+            <div class="text-end mt-4">
+                <button type="submit" class="btn btn-primary">
+                    <i class="fas fa-save me-2"></i>Save Production Log
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+<script>
+    $(document).ready(function() {
+        // Initialize select2
+        $('#log_designation').select2({
+            ajax: {
+                url: "{% url 'prod:get_log_designations' %}",
+                dataType: 'json',
+                delay: 250,
+                data: function(params) {
+                    return {
+                        q: params.term || '',
+                        process: $('#process').val()
+                    };
+                },
+                processResults: function(data) {
+                    return data;
+                },
+                cache: false
+            },
+            minimumInputLength: 0,
+            multiple: true,
+            placeholder: 'Search for parts...',
+            allowClear: true
+        }).on('select2:select', function(e) {
+            const logDesignation = e.params.data.id;
+            const availableQuantity = e.params.data.available_quantity;
+            addItemToTable(logDesignation, availableQuantity);
+        });
+
+        // Function to add item to table
+        function addItemToTable(logDesignation, availableQuantity) {
+            // Check if item already exists in table
+            if ($('#selectedItemsTable tbody').find(`tr[data-log-designation="${logDesignation}"]`).length > 0) {
+                showAlert('warning', 'This item has already been added.');
+                return;
+            }
+
+            $.ajax({
+                url: "{% url 'prod:get_log_designation_details' %}",
+                data: { 
+                    log_designation: logDesignation,
+                    process: $('#process').val()
+                },
+                success: function(details) {
+                    const row = `
+                        <tr data-log-designation="${logDesignation}">
+                            <td>${logDesignation}</td>
+                            <td>${details.part_designation}</td>
+                            <td>${details.name}</td>
+                            <td>${availableQuantity}</td>
+                            <td>
+                                <div class="input-group">
+                                    <input type="number" class="form-control quantity-input" 
+                                           min="1" max="${availableQuantity}" required>
+                                    <button type="button" class="btn btn-outline-secondary max-quantity" 
+                                           data-max="${availableQuantity}">Max</button>
+                                </div>
+                            </td>
+                            <td>
+                                <button type="button" class="btn btn-danger btn-sm remove-item">
+                                    <i class="fas fa-trash"></i>
+                                </button>
+                            </td>
+                        </tr>
+                    `;
+                    $('#selectedItemsTable tbody').append(row);
+                },
+                error: function() {
+                    showAlert('danger', 'Failed to fetch item details.');
+                }
+            });
+        }
+
+        // Process change handler
+        $('#process').on('change', function() {
+            const process = $(this).val();
+            if (process) {
+                $('#log_designation').prop('disabled', false).val(null).trigger('change');
+                $('#selectedItemsTable tbody').empty();
+            } else {
+                $('#log_designation').prop('disabled', true).val(null).trigger('change');
+                $('#selectedItemsTable tbody').empty();
+            }
+        });
+
+        // Max all button handler
+        $('#maxAllButton').click(function() {
+            $('#selectedItemsTable tbody tr').each(function() {
+                const maxQuantity = $(this).find('.max-quantity').data('max');
+                $(this).find('.quantity-input').val(maxQuantity);
+            });
+        });
+
+        // Individual max quantity button handler
+        $(document).on('click', '.max-quantity', function() {
+            const maxQuantity = $(this).data('max');
+            $(this).closest('tr').find('.quantity-input').val(maxQuantity);
+        });
+
+        // Handle remove item
+        $(document).on('click', '.remove-item', function() {
+            const logDesignation = $(this).closest('tr').data('log-designation');
+            // Remove the item from Select2 selection
+            const currentSelections = $('#log_designation').val().filter(id => id !== logDesignation);
+            $('#log_designation').val(currentSelections).trigger('change');
+            // Remove the table row
+            $(this).closest('tr').remove();
+        });
+
+        // Form submission
+        $('#productionLogForm').on('submit', function(e) {
+            e.preventDefault();
+            
+            const items = [];
+            let isValid = true;
+            
+            $('#selectedItemsTable tbody tr').each(function() {
+                const quantity = $(this).find('.quantity-input').val();
+                const maxQuantity = $(this).find('.max-quantity').data('max');
+                
+                if (!quantity || quantity < 1 || quantity > maxQuantity) {
+                    showAlert('danger', 'Please enter valid quantities for all items.');
+                    isValid = false;
+                    return false;
+                }
+                
+                items.push({
+                    log_designation: $(this).data('log-designation'),
+                    quantity: parseInt(quantity)
+                });
+            });
+            
+            if (!isValid || items.length === 0) {
+                if (items.length === 0) {
+                    showAlert('danger', 'Please add at least one item.');
+                }
+                return;
+            }
+            
+            const data = {
+                process: $('#process').val(),
+                items: items
+            };
+            
+            $.ajax({
+                url: "{% url 'prod:submit_production_log' %}",
+                method: 'POST',
+                data: JSON.stringify(data),
+                contentType: 'application/json',
+                success: function(response) {
+                    showAlert('success', 'Production log saved successfully!');
+                    // Clear form
+                    $('#process').val('').trigger('change');
+                    $('#selectedItemsTable tbody').empty();
+                },
+                error: function(xhr) {
+                    let errorMessage = 'Failed to save production log.';
+                    if (xhr.responseJSON && xhr.responseJSON.error) {
+                        errorMessage = xhr.responseJSON.error;
+                    }
+                    showAlert('danger', errorMessage);
+                }
+            });
+        });
+
+        function showAlert(type, message) {
+            const alertHtml = `
+                <div class="alert alert-${type} alert-dismissible fade show" role="alert">
+                    ${message}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                </div>
+            `;
+            
+            // Remove any existing alerts
+            $('.alert').remove();
+            
+            // Add new alert before the form
+            $('.form-header').after(alertHtml);
+            
+            // Auto dismiss after 5 seconds
+            setTimeout(function() {
+                $('.alert').fadeOut('slow', function() {
+                    $(this).remove();
+                });
+            }, 5000);
+        }
+    });
+</script>
+{% endblock %}

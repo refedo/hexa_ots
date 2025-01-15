@@ -15,6 +15,8 @@ from django.http import JsonResponse
 from django.views.decorators.http import require_http_methods
 from django.db.models import Sum
 from django.utils import timezone
+from django.views.decorators.csrf import csrf_exempt
+from django.core.exceptions import ValidationError
 
 # Create your views here.
 
@@ -159,6 +161,24 @@ def add_building(request, project_number):
     }
     return render(request, 'add_building.html', context)
 
+def project_detail(request, project_number):
+    """View function for displaying project details."""
+    project = get_object_or_404(Project, project_number=project_number)
+    buildings = Building.objects.filter(project=project)
+    raw_data = RawData.objects.filter(project=project)
+    
+    context = {
+        'project': project,
+        'buildings': buildings,
+        'raw_data': raw_data
+    }
+    return render(request, 'projects/project_detail.html', context)
+
+def projects_list(request):
+    """View function for displaying the list of projects."""
+    projects = Project.objects.all().order_by('-created_at')
+    return render(request, 'projects/project_list.html', {'projects': projects})
+
 def production_logging(request):
     """View for the production logging page"""
     return render(request, 'production_logging.html')
@@ -216,3 +236,27 @@ def log_production(request):
         return JsonResponse({'success': True})
     except Exception as e:
         return JsonResponse({'success': False, 'error': str(e)})
+
+@csrf_exempt
+def get_buildings(request):
+    """Get buildings for a project."""
+    project_id = request.GET.get('project')
+    print(f"DEBUG: get_buildings called with project_id: {project_id}")
+    
+    if not project_id:
+        print("DEBUG: No project_id provided")
+        return JsonResponse({'error': 'No project ID provided'}, status=400)
+    
+    try:
+        # Get buildings for project
+        buildings = Building.objects.filter(project_id=project_id)
+        print(f"DEBUG: Found {buildings.count()} buildings for project {project_id}")
+        
+        # Convert to list of dictionaries
+        building_list = [{'id': b.id, 'building_name': b.building_name} for b in buildings]
+        print(f"DEBUG: Building list: {building_list}")
+        
+        return JsonResponse(building_list, safe=False)
+    except Exception as e:
+        print(f"DEBUG: Error in get_buildings: {str(e)}")
+        return JsonResponse({'error': str(e)}, status=500)
