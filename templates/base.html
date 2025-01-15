@@ -1,5 +1,6 @@
+
+{{ ... }}
 <!DOCTYPE html>
-{% load static %}
 <html lang="en">
 <head>
     <meta charset="UTF-8">
@@ -7,91 +8,121 @@
     <title>{% block title %}HEXA OTS{% endblock %}</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
-    <link href="https://cdn.jsdelivr.net/npm/apexcharts@3.44.0/dist/apexcharts.css" rel="stylesheet">
-    <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet">
-    <link href="https://cdn.jsdelivr.net/npm/select2-bootstrap-5-theme@1.3.0/dist/select2-bootstrap-5-theme.min.css" rel="stylesheet">
-    <link href="{% static 'css/style.css' %}" rel="stylesheet">
+    <style>
+        .sidebar {
+            min-height: 100vh;
+            background-color: #1a237e;
+            color: white;
+            padding-top: 20px;
+        }
+        .sidebar .nav-link {
+            color: rgba(255,255,255,.8);
+            padding: 10px 20px;
+        }
+        .sidebar .nav-link:hover,
+        .sidebar .nav-link.active {
+            color: white;
+            background-color: #0d47a1;
+        }
+        .main-content {
+            padding: 20px;
+        }
+        .card {
+            margin-bottom: 20px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+    </style>
     {% block extra_css %}{% endblock %}
 </head>
 <body>
-    <!-- Sidebar -->
-    <div class="sidebar">
-        <div class="sidebar-header">
-            <h3>HEXA OTS</h3>
-        </div>
-        <div class="sidebar-menu">
-            <a href="{% url 'dashboard' %}" class="menu-item {% if request.path == '/' %}active{% endif %}">
-                <i class="fas fa-chart-line"></i>
-                <span>Dashboard</span>
-            </a>
-            <a href="{% url 'raw_data' %}" class="menu-item {% if 'raw-data' in request.path %}active{% endif %}">
-                <i class="fas fa-database"></i>
-                <span>Raw Data</span>
-            </a>
-            <a href="{% url 'projects' %}" class="menu-item {% if 'projects' in request.path %}active{% endif %}">
-                <i class="fas fa-project-diagram"></i>
-                <span>Projects</span>
-            </a>
-            
-            <!-- Production Section -->
-            <div class="menu-section">
-                <a href="{% url 'production' %}" class="menu-item {% if 'production' in request.path %}active{% endif %}">
-                    <i class="fas fa-industry"></i>
-                    <span>Production</span>
-                </a>
-                <div class="submenu {% if 'production' in request.path %}show{% endif %}">
-                    <a href="{% url 'production_logging' %}" class="menu-item {% if 'production/log' in request.path %}active{% endif %}">
-                        <i class="fas fa-clipboard-list"></i>
-                        <span>Production Logging</span>
-                    </a>
-                    <a href="{% url 'production_list' %}" class="menu-item {% if 'production/list' in request.path %}active{% endif %}">
-                        <i class="fas fa-clipboard-check"></i>
-                        <span>Production List</span>
-                    </a>
+    <div class="container-fluid">
+        <div class="row">
+            <!-- Sidebar -->
+            <nav class="col-md-3 col-lg-2 d-md-block sidebar collapse">
+                <div class="position-sticky">
+                    <div class="text-center mb-4">
+                        <h4>HEXA OTS</h4>
+                    </div>
+                    <ul class="nav flex-column">
+                        <li class="nav-item">
+                            <a class="nav-link {% if request.path == '/' %}active{% endif %}" href="{% url 'home' %}">
+                                <i class="fas fa-home me-2"></i>Dashboard
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link {% if '/projects/' in request.path %}active{% endif %}" href="{% url 'projects:project-list' %}">
+                                <i class="fas fa-project-diagram me-2"></i>Projects
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link {% if '/raw-data/' in request.path %}active{% endif %}" href="{% url 'raw_data' %}">
+                                <i class="fas fa-database me-2"></i>Raw Data
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link {% if '/production/' in request.path %}active{% endif %}" href="{% url 'prod:management' %}">
+                                <i class="fas fa-industry me-2"></i>Production
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link {% if '/qc/' in request.path %}active{% endif %}" href="{% url 'qc' %}">
+                                <i class="fas fa-check-circle me-2"></i>QC
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link {% if '/logistics/' in request.path %}active{% endif %}" href="{% url 'logistics' %}">
+                                <i class="fas fa-truck me-2"></i>Logistics
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link {% if '/material/' in request.path %}active{% endif %}" href="{% url 'material' %}">
+                                <i class="fas fa-boxes me-2"></i>Material
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="/admin/">
+                                <i class="fas fa-cog me-2"></i>Admin
+                            </a>
+                        </li>
+                    </ul>
                 </div>
-            </div>
-            
-            <a href="{% url 'qc' %}" class="menu-item {% if 'qc' in request.path %}active{% endif %}">
-                <i class="fas fa-check-circle"></i>
-                <span>Quality Control</span>
-            </a>
-            <a href="{% url 'logistics' %}" class="menu-item {% if 'logistics' in request.path %}active{% endif %}">
-                <i class="fas fa-truck"></i>
-                <span>Logistics</span>
-            </a>
-            <a href="{% url 'material' %}" class="menu-item {% if 'material' in request.path %}active{% endif %}">
-                <i class="fas fa-boxes"></i>
-                <span>Material</span>
-            </a>
+            </nav>
+
+            <!-- Main content -->
+            <main class="col-md-9 ms-sm-auto col-lg-10 px-md-4">
+                <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+                    <h1 class="h2">{% block page_title %}{% endblock %}</h1>
+                    <div class="btn-toolbar mb-2 mb-md-0">
+                        {% if user.is_authenticated %}
+                            <span class="me-3">{{ user.username }}</span>
+                            <a href="/admin/logout/" class="btn btn-outline-primary btn-sm">
+                                <i class="fas fa-sign-out-alt"></i> Logout
+                            </a>
+                        {% else %}
+                            <a href="/admin/login/" class="btn btn-primary btn-sm">
+                                <i class="fas fa-sign-in-alt"></i> Login
+                            </a>
+                        {% endif %}
+                    </div>
+                </div>
+
+                {% if messages %}
+                    {% for message in messages %}
+                        <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+                            {{ message }}
+                            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                        </div>
+                    {% endfor %}
+                {% endif %}
+
+                {% block content %}{% endblock %}
+            </main>
         </div>
     </div>
 
-    <!-- Main Content -->
-    <div class="main-content">
-        <div class="content-header">
-            <h1 class="page-title">{% block page_title %}{% endblock %}</h1>
-        </div>
-        {% block content %}{% endblock %}
-    </div>
-
-    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/apexcharts@3.44.0/dist/apexcharts.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
-    <script>
-        $(document).ready(function() {
-            // Toggle submenu on parent menu click
-            $('.menu-section > .menu-item').click(function(e) {
-                e.preventDefault();
-                $(this).siblings('.submenu').toggleClass('show');
-            });
-            
-            // Don't toggle when clicking submenu items
-            $('.submenu .menu-item').click(function(e) {
-                e.stopPropagation();
-            });
-        });
-    </script>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     {% block extra_js %}{% endblock %}
 </body>
 </html>
+{{ ... }}

@@ -1,0 +1,119 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h3 class="card-title">Project Details: {{ project.project_name }}</h3>
+                    <div>
+                        <a href="{% url 'projects:add_building' project.project_number %}" class="btn btn-primary">
+                            <i class="fas fa-plus me-2"></i>Add Building
+                        </a>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <h4>Project Information</h4>
+                            <table class="table">
+                                <tr>
+                                    <th>Project Number:</th>
+                                    <td>{{ project.project_number }}</td>
+                                </tr>
+                                <tr>
+                                    <th>Client:</th>
+                                    <td>{{ project.client_name }}</td>
+                                </tr>
+                                <tr>
+                                    <th>Status:</th>
+                                    <td>
+                                        <span class="badge bg-{% if project.status == 'completed' %}success{% elif project.status == 'in_progress' %}primary{% else %}warning{% endif %}">
+                                            {{ project.get_status_display }}
+                                        </span>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <th>Project Nature:</th>
+                                    <td>{{ project.get_project_nature_display }}</td>
+                                </tr>
+                                <tr>
+                                    <th>Structure Type:</th>
+                                    <td>{{ project.get_structure_type_display }}</td>
+                                </tr>
+                            </table>
+                        </div>
+                        <div class="col-md-6">
+                            <h4>Buildings</h4>
+                            <div class="table-responsive">
+                                <table class="table">
+                                    <thead>
+                                        <tr>
+                                            <th>Name</th>
+                                            <th>Designer</th>
+                                            <th>Status</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {% for building in buildings %}
+                                        <tr>
+                                            <td>{{ building.building_name }}</td>
+                                            <td>{{ building.designer_name }}</td>
+                                            <td>
+                                                <span class="badge bg-{% if building.erection_applicable %}success{% else %}secondary{% endif %}">
+                                                    {{ building.get_erection_applicable_display }}
+                                                </span>
+                                            </td>
+                                        </tr>
+                                        {% empty %}
+                                        <tr>
+                                            <td colspan="3" class="text-center">No buildings added yet.</td>
+                                        </tr>
+                                        {% endfor %}
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="row mt-4">
+                        <div class="col-12">
+                            <h4>Raw Data</h4>
+                            <div class="table-responsive">
+                                <table class="table">
+                                    <thead>
+                                        <tr>
+                                            <th>Log Designation</th>
+                                            <th>Part Mark</th>
+                                            <th>Assembly Mark</th>
+                                            <th>Quantity</th>
+                                            <th>Net Weight</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {% for item in raw_data %}
+                                        <tr>
+                                            <td>{{ item.log_designation }}</td>
+                                            <td>{{ item.part_mark }}</td>
+                                            <td>{{ item.assembly_mark }}</td>
+                                            <td>{{ item.quantity }}</td>
+                                            <td>{{ item.net_weight_total }}</td>
+                                        </tr>
+                                        {% empty %}
+                                        <tr>
+                                            <td colspan="5" class="text-center">No raw data available.</td>
+                                        </tr>
+                                        {% endfor %}
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

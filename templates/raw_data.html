@@ -101,17 +101,89 @@
                 <form id="uploadForm" method="post" enctype="multipart/form-data">
                     {% csrf_token %}
                     <div class="mb-3">
-                        <label class="form-label">Select Excel File</label>
-                        <input type="file" class="form-control" name="excel_file" accept=".xlsx,.xls" required>
-                        <div class="form-text">Supported formats: .xlsx, .xls</div>
+                        <label for="upload_project" class="form-label">Project</label>
+                        <select class="form-select" id="upload_project" name="project" required>
+                            <option value="">Select Project</option>
+                            {% for project in projects %}
+                            <option value="{{ project.id }}">{{ project.project_number }} - {{ project.project_name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label for="upload_building" class="form-label">Building</label>
+                        <select class="form-select" id="upload_building" name="building" required disabled>
+                            <option value="">Select Building</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label for="excel_file" class="form-label">Excel File</label>
+                        <input type="file" class="form-control" id="excel_file" name="excel_file" accept=".xlsx,.xls" required>
                     </div>
                 </form>
             </div>
             <div class="modal-footer">
                 <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                <button type="submit" form="uploadForm" class="btn btn-primary">
-                    <i class="fas fa-upload me-2"></i> Upload
-                </button>
+                <button type="submit" form="uploadForm" class="btn btn-primary">Upload</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Add Entry Modal -->
+<div class="modal fade" id="addEntryModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Add Raw Data Entry</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="addEntryForm" method="post">
+                    {% csrf_token %}
+                    <div class="mb-3">
+                        <label for="project" class="form-label">Project</label>
+                        <select class="form-select" id="project" name="project" required>
+                            <option value="">Select Project</option>
+                            {% for project in projects %}
+                            <option value="{{ project.id }}">{{ project.project_number }} - {{ project.project_name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label for="building" class="form-label">Building</label>
+                        <select class="form-select" id="building" name="building" required disabled>
+                            <option value="">Select Building</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label for="log_designation" class="form-label">Log Designation</label>
+                        <input type="text" class="form-control" id="log_designation" name="log_designation" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="assembly_mark" class="form-label">Assembly Mark</label>
+                        <input type="text" class="form-control" id="assembly_mark" name="assembly_mark">
+                    </div>
+                    <div class="mb-3">
+                        <label for="part_mark" class="form-label">Part Mark</label>
+                        <input type="text" class="form-control" id="part_mark" name="part_mark">
+                    </div>
+                    <div class="mb-3">
+                        <label for="quantity" class="form-label">Quantity</label>
+                        <input type="number" class="form-control" id="quantity" name="quantity" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="profile" class="form-label">Profile</label>
+                        <input type="text" class="form-control" id="profile" name="profile">
+                    </div>
+                    <div class="mb-3">
+                        <label for="net_weight_total" class="form-label">Net Weight Total</label>
+                        <input type="number" class="form-control" id="net_weight_total" name="net_weight_total" required>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="submit" form="addEntryForm" class="btn btn-primary">Add Entry</button>
             </div>
         </div>
     </div>
@@ -121,6 +193,60 @@
 
 {% block extra_js %}
 <script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Function to handle project change and update buildings
+    function handleProjectChange(projectSelect, buildingSelect) {
+        const projectId = projectSelect.value;
+        buildingSelect.innerHTML = '<option value="">Loading...</option>';
+        buildingSelect.disabled = true;
+        
+        if (!projectId) {
+            buildingSelect.innerHTML = '<option value="">Select Building</option>';
+            buildingSelect.disabled = true;
+            return;
+        }
+        
+        fetch(`{% url 'projects:get_buildings' %}?project=${projectId}`)
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('Network response was not ok');
+                }
+                return response.json();
+            })
+            .then(data => {
+                buildingSelect.innerHTML = '<option value="">Select Building</option>';
+                data.forEach(building => {
+                    buildingSelect.add(new Option(building.building_name, building.id));
+                });
+                buildingSelect.disabled = false;
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                buildingSelect.innerHTML = '<option value="">Error loading buildings</option>';
+                buildingSelect.disabled = true;
+            });
+    }
+
+    // Set up project change handlers for both modals
+    const uploadProjectSelect = document.getElementById('upload_project');
+    const uploadBuildingSelect = document.getElementById('upload_building');
+    
+    if (uploadProjectSelect && uploadBuildingSelect) {
+        uploadProjectSelect.addEventListener('change', function() {
+            handleProjectChange(this, uploadBuildingSelect);
+        });
+    }
+
+    const addProjectSelect = document.getElementById('project');
+    const addBuildingSelect = document.getElementById('building');
+    
+    if (addProjectSelect && addBuildingSelect) {
+        addProjectSelect.addEventListener('change', function() {
+            handleProjectChange(this, addBuildingSelect);
+        });
+    }
+});
+
 function editEntry(id) {
     window.location.href = `/raw-data/edit/${id}`;
 }

@@ -1,5 +1,5 @@
 {% extends "admin/change_list.html" %}
-{% load static %}
+{% load i18n admin_urls static admin_list %}
 
 {% block content_title %}
     <h1>Raw Data Management</h1>
@@ -42,31 +42,140 @@
 {% block extrahead %}
 {{ block.super }}
 <script>
-document.addEventListener('DOMContentLoaded', function() {
-    const projectSelect = document.getElementById('project');
-    const buildingSelect = document.getElementById('building');
+(function($) {
+    'use strict';
+    $(document).ready(function() {
+        function getCookie(name) {
+            let cookieValue = null;
+            if (document.cookie && document.cookie !== '') {
+                const cookies = document.cookie.split(';');
+                for (let i = 0; i < cookies.length; i++) {
+                    const cookie = cookies[i].trim();
+                    if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                        cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                        break;
+                    }
+                }
+            }
+            return cookieValue;
+        }
 
-    projectSelect.addEventListener('change', function() {
-        const projectId = this.value;
-        buildingSelect.innerHTML = '<option value="">Select Building</option>';
+        // Function to update building options
+        function updateBuildingOptions() {
+            var projectSelect = $('#project');
+            var buildingSelect = $('#building');
+            
+            console.log('Project select:', projectSelect.length ? 'found' : 'not found');
+            console.log('Building select:', buildingSelect.length ? 'found' : 'not found');
+            
+            if (!projectSelect.length || !buildingSelect.length) {
+                console.error('Select elements not found');
+                return;
+            }
+            
+            var projectId = projectSelect.val();
+            console.log('Selected project ID:', projectId);
+            
+            if (!projectId) {
+                buildingSelect.html('<option value="">Select Building</option>');
+                buildingSelect.prop('disabled', true);
+                return;
+            }
+            
+            // Show loading state
+            buildingSelect.html('<option value="">Loading...</option>');
+            buildingSelect.prop('disabled', true);
+            
+            // Make AJAX request
+            $.ajax({
+                url: '/projects/get-buildings/',  
+                data: { project: projectId },
+                method: 'GET',
+                headers: {
+                    'X-CSRFToken': getCookie('csrftoken')
+                },
+                success: function(data) {
+                    console.log('Received data:', data);
+                    buildingSelect.empty();
+                    buildingSelect.append('<option value="">Select Building</option>');
+                    
+                    if (Array.isArray(data) && data.length > 0) {
+                        data.forEach(function(building) {
+                            buildingSelect.append(
+                                $('<option></option>')
+                                .val(building.id)
+                                .text(building.building_name)
+                            );
+                        });
+                        buildingSelect.prop('disabled', false);
+                    } else {
+                        buildingSelect.html('<option value="">No buildings available</option>');
+                    }
+                },
+                error: function(xhr, status, error) {
+                    console.error('Error:', error);
+                    console.log('Status:', status);
+                    console.log('Response:', xhr.responseText);
+                    try {
+                        const response = JSON.parse(xhr.responseText);
+                        buildingSelect.html(`<option value="">Error: ${response.error || 'Failed to load buildings'}</option>`);
+                    } catch (e) {
+                        buildingSelect.html('<option value="">Error loading buildings</option>');
+                    }
+                }
+            });
+        }
         
-        if (projectId) {
-            fetch(`/api/projects/${projectId}/buildings/`)
-                .then(response => response.json())
-                .then(data => {
-                    data.forEach(building => {
-                        const option = document.createElement('option');
-                        option.value = building.id;
-                        option.textContent = building.building_name;
-                        buildingSelect.appendChild(option);
-                    });
-                })
-                .catch(error => console.error('Error:', error));
+        // Bind change event to project select
+        $('#project').on('change', function() {
+            console.log('Project changed to:', $(this).val());
+            updateBuildingOptions();
+        });
+        
+        // Initial load if project is selected
+        if ($('#project').val()) {
+            console.log('Initial project value:', $('#project').val());
+            updateBuildingOptions();
         }
     });
-});
+})(django.jQuery);
 </script>
+
 <style>
+    .object-tools {
+        margin-top: 15px;
+    }
+    .object-tools a.addlink {
+        background: #417690;
+    }
+    .object-tools a.addlink:hover {
+        background: #306080;
+    }
+    .upload-form {
+        margin: 20px 0;
+        padding: 20px;
+        background: #f8f8f8;
+        border: 1px solid #ddd;
+        border-radius: 4px;
+    }
+    .upload-form label {
+        display: block;
+        margin-bottom: 10px;
+    }
+    .upload-form input[type="file"] {
+        margin-bottom: 15px;
+    }
+    .upload-form input[type="submit"] {
+        background: #417690;
+        color: white;
+        padding: 10px 15px;
+        border: none;
+        border-radius: 4px;
+        cursor: pointer;
+    }
+    .upload-form input[type="submit"]:hover {
+        background: #306080;
+    }
     select, input[type="file"] {
         width: 300px;
         padding: 5px;
@@ -90,4 +199,8 @@ document.addEventListener('DOMContentLoaded', function() {
         background: #609ab6;
     }
 </style>
+{% endblock %}
+
+{% block content %}
+{{ block.super }}
 {% endblock %}
