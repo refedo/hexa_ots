@@ -8,18 +8,28 @@ from .views import (
 
 app_name = 'projects'
 
-router = DefaultRouter()
-router.register(r'api/projects', ProjectViewSet)
-router.register(r'api/buildings', BuildingViewSet)
-router.register(r'api/rawdata', RawDataViewSet)
-
+# Main URL patterns
 urlpatterns = [
+    # Main views
     path('', projects_list, name='project-list'),
-    path('get-buildings/', get_buildings, name='get_buildings'),
     path('<str:project_number>/', project_detail, name='project-detail'),
     path('<str:project_number>/add-building/', add_building, name='add_building'),
-    path('api/', include(router.urls)),
-    path('api/assembly-parts/', get_assembly_parts, name='get_assembly_parts'),
-    path('api/total-quantity/', get_total_quantity, name='get_total_quantity'),
-    path('api/log-production/', log_production, name='log_production'),
+    path('get-buildings/', get_buildings, name='get_buildings'),
 ]
+
+# API endpoints
+api_patterns = [
+    path('assembly-parts/', get_assembly_parts, name='get_assembly_parts'),
+    path('total-quantity/', get_total_quantity, name='get_total_quantity'),
+    path('log-production/', log_production, name='log_production'),
+]
+
+# API router configuration
+router = DefaultRouter()
+router.register('api/projects', ProjectViewSet)  # Changed path prefix
+router.register('api/buildings', BuildingViewSet)  # Changed path prefix
+router.register('api/rawdata', RawDataViewSet)  # Changed path prefix
+
+# Add API URLs
+urlpatterns += api_patterns
+urlpatterns += router.urls  # Include router URLs directly
